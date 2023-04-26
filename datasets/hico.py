@@ -105,21 +105,21 @@ class HICODetection(torch.utils.data.Dataset):
                     sub_boxes.append(sub_box)
                     obj_boxes.append(obj_box)
 
-            target['filename'] = img_anno['file_name']
+            target['filename'] = img_anno['file_name']#CDN
             if len(sub_obj_pairs) == 0:
                 target['obj_labels'] = torch.zeros((0,), dtype=torch.int64)
                 target['verb_labels'] = torch.zeros((0, len(self._valid_verb_ids)), dtype=torch.float32)
                 target['sub_boxes'] = torch.zeros((0, 4), dtype=torch.float32)
                 target['obj_boxes'] = torch.zeros((0, 4), dtype=torch.float32)
-                target['matching_labels'] = torch.zeros((0,), dtype=torch.int64)
+                target['matching_labels'] = torch.zeros((0,), dtype=torch.int64)#CDN
             else:
                 target['obj_labels'] = torch.stack(obj_labels)
                 target['verb_labels'] = torch.as_tensor(verb_labels, dtype=torch.float32)
                 target['sub_boxes'] = torch.stack(sub_boxes)
                 target['obj_boxes'] = torch.stack(obj_boxes)
-                target['matching_labels'] = torch.ones_like(target['obj_labels'])
+                target['matching_labels'] = torch.ones_like(target['obj_labels']) #CDN for training
         else:
-            target['filename'] = img_anno['file_name']
+            target['filename'] = img_anno['file_name']#CDN
             target['boxes'] = boxes
             target['labels'] = classes
             target['id'] = idx

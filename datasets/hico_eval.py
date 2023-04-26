@@ -1,13 +1,14 @@
 import numpy as np
 from collections import defaultdict
-import os, cv2, json
+import os, cv2, json#CDN import
 
 
 class HICOEvaluator():
-    def __init__(self, preds, gts, rare_triplets, non_rare_triplets, correct_mat, args):
+    def __init__(self, preds, gts, rare_triplets, non_rare_triplets, correct_mat, args):#CDN 参数不同
         self.overlap_iou = 0.5
         self.max_hois = 100
 
+        #CDN NMS
         self.use_nms_filter = args.use_nms_filter
         self.thres_nms = args.thres_nms
         self.nms_alpha = args.nms_alpha
@@ -48,22 +49,22 @@ class HICOEvaluator():
             else:
                 hois = []
 
-            filename = gts[index]['filename']
+            filename = gts[index]['filename'] #CDN
             self.preds.append({
-                'filename':filename,
+                'filename':filename, ##CDN
                 'predictions': bboxes,
                 'hoi_prediction': hois
             })
 
-
+        #CDN NMS
         if self.use_nms_filter:
             self.preds = self.triplet_nms_filter(self.preds)
 
 
         self.gts = []
         for i, img_gts in enumerate(gts):
-            filename = img_gts['filename']
-            img_gts = {k: v.to('cpu').numpy() for k, v in img_gts.items() if k != 'id' and k != 'filename'}
+            filename = img_gts['filename']#CDN 取出filename
+            img_gts = {k: v.to('cpu').numpy() for k, v in img_gts.items() if k != 'id' and k != 'filename'}#CDN 排除filename
             self.gts.append({
                 'filename':filename,
                 'annotations': [{'bbox': list(bbox), 'category_id': label} for bbox, label in zip(img_gts['boxes'], img_gts['labels'])],
@@ -80,7 +81,7 @@ class HICOEvaluator():
                 self.sum_gts[triplet] += 1
 
 
-        with open(args.json_file, 'w') as f:
+        with open(args.json_file, 'w') as f: # CDN,保存文件
             f.write(json.dumps(str({'preds':self.preds, 'gts':self.gts})))
 
 
@@ -253,7 +254,7 @@ class HICOEvaluator():
         else:
             return 0
 
-    def triplet_nms_filter(self, preds):
+    def triplet_nms_filter(self, preds): #CDN
         preds_filtered = []
         for img_preds in preds:
             pred_bboxes = img_preds['predictions']
@@ -286,7 +287,7 @@ class HICOEvaluator():
 
         return preds_filtered
 
-    def pairwise_nms(self, subs, objs, scores):
+    def pairwise_nms(self, subs, objs, scores): #CDN
         sx1, sy1, sx2, sy2 = subs[:, 0], subs[:, 1], subs[:, 2], subs[:, 3]
         ox1, oy1, ox2, oy2 = objs[:, 0], objs[:, 1], objs[:, 2], objs[:, 3]
 
