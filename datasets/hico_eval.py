@@ -8,11 +8,12 @@ class HICOEvaluator():
         self.overlap_iou = 0.5
         self.max_hois = 100
 
-        #CDN NMS
+        ########CDN NMS
         self.use_nms_filter = args.use_nms_filter
         self.thres_nms = args.thres_nms
         self.nms_alpha = args.nms_alpha
         self.nms_beta = args.nms_beta
+        ############
 
         self.rare_triplets = rare_triplets
         self.non_rare_triplets = non_rare_triplets
@@ -80,9 +81,9 @@ class HICOEvaluator():
 
                 self.sum_gts[triplet] += 1
 
-
-        with open(args.json_file, 'w') as f: # CDN,保存文件
-            f.write(json.dumps(str({'preds':self.preds, 'gts':self.gts})))
+        # CDN,保存文件，暂时不需要
+        #with open(args.json_file, 'w') as f:
+        #    f.write(json.dumps(str({'preds':self.preds, 'gts':self.gts})))
 
 
 

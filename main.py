@@ -15,6 +15,10 @@ from datasets import build_dataset
 from engine import train_one_epoch, evaluate_hoi
 from models import build_model
 import os
+#######
+import wandb
+######
+
 
 def get_args_parser():
     parser = argparse.ArgumentParser('Set transformer detector', add_help=False)
@@ -41,10 +45,12 @@ def get_args_parser():
     # * Transformer
     parser.add_argument('--enc_layers', default=6, type=int,
                         help="Number of encoding layers in the transformer")
+    ####################QPIC:--dec_layers ->CDN
     parser.add_argument('--dec_layers_hopd', default=3, type=int,
                         help="Number of hopd decoding layers in the transformer")
     parser.add_argument('--dec_layers_interaction', default=3, type=int,
                         help="Number of interaction decoding layers in the transformer")
+    ###################################
     parser.add_argument('--dim_feedforward', default=2048, type=int,
                         help="Intermediate size of the feedforward layers in the transformer blocks")
     parser.add_argument('--hidden_dim', default=256, type=int,
@@ -71,12 +77,21 @@ def get_args_parser():
     parser.add_argument('--subject_category_id', default=0, type=int)
     parser.add_argument('--verb_loss_type', type=str, default='focal',
                         help='Loss type for the verb classification')
+    ##########added by CDN
+    parser.add_argument('--alpha', default=0.5, type=float, help='focal loss alpha')
+    ###################
+
 
     # Loss
     parser.add_argument('--no_aux_loss', dest='aux_loss', action='store_false',
                         help="Disables auxiliary decoding losses (loss at each layer)")
+    ################CDN，是否使用matching cost/loss
     parser.add_argument('--use_matching', action='store_true',
                         help="Use obj/sub matching 2class loss in first decoder, default not use")
+    parser.add_argument('--set_cost_matching', default=1, type=float,
+                        help="Sub and obj box matching coefficient in the matching cost")
+    parser.add_argument('--matching_loss_coef', default=1, type=float)
+    ##########################
 
     # * Matcher
     parser.add_argument('--set_cost_class', default=1, type=float,
@@ -89,8 +104,6 @@ def get_args_parser():
                         help="Object class coefficient in the matching cost")
     parser.add_argument('--set_cost_verb_class', default=1, type=float,
                         help="Verb class coefficient in the matching cost")
-    parser.add_argument('--set_cost_matching', default=1, type=float,
-                        help="Sub and obj box matching coefficient in the matching cost")
 
     # * Loss coefficients
     parser.add_argument('--mask_loss_coef', default=1, type=float)
@@ -99,8 +112,6 @@ def get_args_parser():
     parser.add_argument('--giou_loss_coef', default=1, type=float)
     parser.add_argument('--obj_loss_coef', default=1, type=float)
     parser.add_argument('--verb_loss_coef', default=2, type=float)
-    parser.add_argument('--alpha', default=0.5, type=float, help='focal loss alpha')
-    parser.add_argument('--matching_loss_coef', default=1, type=float)
     parser.add_argument('--eos_coef', default=0.1, type=float,
                         help="Relative classification weight of the no-object class")
 
@@ -126,12 +137,16 @@ def get_args_parser():
     parser.add_argument('--world_size', default=1, type=int,
                         help='number of distributed processes')
     parser.add_argument('--dist_url', default='env://', help='url used to set up distributed training')
+#################
+    parser.add_argument('--wandb', action='store_true',
+                    help="Use wandb if the flag is provided")
+################
 
-    # decoupling training parameters
+    #CDN: decoupling training parameters
     parser.add_argument('--freeze_mode', default=0, type=int)
     parser.add_argument('--obj_reweight', action='store_true')
     parser.add_argument('--verb_reweight', action='store_true')
-    parser.add_argument('--use_static_weights', action='store_true', 
+    parser.add_argument('--use_static_weights', action='store_true',
                         help='use static weights or dynamic weights, default use dynamic')
     parser.add_argument('--queue_size', default=4704*1.0, type=float,
                         help='Maxsize of queue for obj and verb reweighting, default 1 epoch')
@@ -140,11 +155,13 @@ def get_args_parser():
     parser.add_argument('--p_verb', default=0.7, type=float,
                         help='Reweighting parameter for verb')
 
-    # hoi eval parameters
+    #CDN: hoi eval parameters
     parser.add_argument('--use_nms_filter', action='store_true', help='Use pair nms filter, default not use')
     parser.add_argument('--thres_nms', default=0.7, type=float)
     parser.add_argument('--nms_alpha', default=1.0, type=float)
     parser.add_argument('--nms_beta', default=0.5, type=float)
+
+    ## CDN,保存文件，暂时不需要
     parser.add_argument('--json_file', default='results.json', type=str)
 
     return parser
@@ -160,6 +177,7 @@ def main(args):
 
     device = torch.device(args.device)
 
+    # fix the seed for reproducibility
     seed = args.seed + utils.get_rank()
     torch.manual_seed(seed)
     np.random.seed(seed)
@@ -171,9 +189,12 @@ def main(args):
     model_without_ddp = model
     if args.distributed:
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu], find_unused_parameters=True)
+        ######CDN Set find_unused_parameters=True
         model_without_ddp = model.module
     n_parameters = sum(p.numel() for p in model.parameters() if p.requires_grad)
 
+
+    #########CDN
     if args.freeze_mode == 1:
         for name, p in model.named_parameters():
             if 'decoder' not in name and 'verb_class_embed' not in name and 'obj_class_embed' not in name \
@@ -181,6 +202,8 @@ def main(args):
                 p.requires_grad = False
             if args.use_matching and 'matching_embed' in name:
                 p.requires_grad = True
+    ####################
+
 
     param_dicts = [
         {"params": [p for n, p in model_without_ddp.named_parameters() if "backbone" not in n and p.requires_grad]},
@@ -235,12 +258,35 @@ def main(args):
             model_without_ddp.load_state_dict(checkpoint['model'], strict=False)
 
     if args.eval:
+        #CDN:多了一个参数args
         test_stats = evaluate_hoi(args.dataset_file, model, postprocessors, data_loader_val, args.subject_category_id, device, args)
         return
 
+############################## start a new wandb run to track this script
+    if args.rank==0 and args.wandb:
+        wandb.init(
+            # set the wandb project where this run will be logged
+            project=f"qpic_resnet50_{args.dataset_file}",
+            # track hyperparameters and run metadata
+            config=args
+        )
+        wandb.config.update({
+            "num_parameters":n_parameters,
+            "model":"CDN"
+        })
+##########################
+
+#####timing
 
     print("Start training")
+    start = torch.cuda.Event(enable_timing=True)
+    end = torch.cuda.Event(enable_timing=True)
+    start.record()
+#####
+    '''#original timing
     start_time = time.time()
+    '''
+
     best_performance = 0
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
@@ -250,6 +296,7 @@ def main(args):
             args.clip_max_norm)
         lr_scheduler.step()
 
+        #CDN:保存最后一个epoch的checkpoint
         if epoch == args.epochs - 1:
             checkpoint_path = os.path.join(output_dir, 'checkpoint_last.pth')
             utils.save_on_master({
@@ -260,21 +307,28 @@ def main(args):
                 'args': args,
             }, checkpoint_path)
 
-
+        ###########CDN
         if args.freeze_mode == 0 and epoch < args.lr_drop and epoch % 5 != 0:  ## eval every 5 epoch before lr_drop
             continue
         elif args.freeze_mode == 0 and epoch >= args.lr_drop and epoch % 2 == 0:  ## eval every 2 epoch after lr_drop
             continue
+        ###################
 
+        #CDN:保存
         test_stats = evaluate_hoi(args.dataset_file, model, postprocessors, data_loader_val, args.subject_category_id, device, args)
-        coco_evaluator = None
+
+        #TODO:delete?
+        #coco_evaluator = None
+
+        ######保存checkpoint
+        # CDN: 取performance最好的那个epoch进行保存！
         if args.dataset_file == 'hico':
             performance = test_stats['mAP']
         elif args.dataset_file == 'vcoco':
             performance = test_stats['mAP_all']
 
         if performance > best_performance:
-            checkpoint_path = os.path.join(output_dir, 'checkpoint_best.pth')
+            checkpoint_path = os.path.join(output_dir,f'checkpoint_best_epoch{epoch}.pth')
             utils.save_on_master({
                 'model': model_without_ddp.state_dict(),
                 'optimizer': optimizer.state_dict(),
@@ -282,15 +336,16 @@ def main(args):
                 'epoch': epoch,
                 'args': args,
             }, checkpoint_path)
-        
+
             best_performance = performance
+
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      **{f'test_{k}': v for k, v in test_stats.items()},
                      'epoch': epoch,
                      'n_parameters': n_parameters}
 
-        if args.output_dir and utils.is_main_process():
+        '''if args.output_dir and utils.is_main_process():
             with (output_dir / "log.txt").open("a") as f:
                 f.write(json.dumps(log_stats) + "\n")
 
@@ -304,10 +359,30 @@ def main(args):
                     for name in filenames:
                         torch.save(coco_evaluator.coco_eval["bbox"].eval,
                                    output_dir / "eval" / name)
+        '''
+#####################
+        if args.wandb and utils.is_main_process(): #args.rank==0
+            wandb.log(log_stats)
 
+    end.record()
+    # Waits for everything to finish running
+    torch.cuda.synchronize()
+
+    total_time=start.elapsed_time(end)  # milliseconds
+    total_time_str = str(datetime.timedelta(milliseconds=int(total_time)))
+    print(total_time_str)
+    if args.wandb and utils.is_main_process(): #args.rank==0
+        wandb.log({"total_time":total_time_str})
+
+    if args.rank==0 and args.wandb:
+        wandb.save(f'{output_dir}/*',policy='end')
+        wandb.finish()
+##############################
+    '''orinial timing
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
+    '''
 
 
 if __name__ == '__main__':
