@@ -5,6 +5,7 @@ import os, cv2, json
 class VCOCOEvaluator():
 
     def __init__(self, preds, gts, correct_mat, use_nms_filter=False):
+        #use_nms_filter在generate_vcoco_official中使用, 本模块没有使用！
         self.overlap_iou = 0.5
         self.max_hois = 100
 

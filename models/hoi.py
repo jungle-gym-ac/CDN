@@ -65,7 +65,7 @@ class CDNHOI(nn.Module):
                 out['aux_outputs'] = self._set_aux_loss(outputs_obj_class, outputs_verb_class,
                                                         outputs_sub_coord, outputs_obj_coord,
                                                         outputs_matching)
-            else:                                            
+            else:
                 out['aux_outputs'] = self._set_aux_loss(outputs_obj_class, outputs_verb_class,
                                                         outputs_sub_coord, outputs_obj_coord)
 
@@ -115,7 +115,7 @@ class SetCriterionHOI(nn.Module):
         empty_weight[-1] = self.eos_coef
         self.register_buffer('empty_weight', empty_weight)
 
-        self.alpha = args.alpha
+        self.alpha = args.alpha #Focal Loss alpha
 
         if args.dataset_file == 'hico':
             self.obj_nums_init = [1811, 9462, 2415, 7249, 1665, 3587, 1396, 1086, 10369, 800, \
@@ -165,7 +165,7 @@ class SetCriterionHOI(nn.Module):
         self.obj_reweight = args.obj_reweight
         self.verb_reweight = args.verb_reweight
         self.use_static_weights = args.use_static_weights
-        
+
         Maxsize = args.queue_size
 
         if self.obj_reweight:
@@ -452,11 +452,18 @@ class PostProcessHOI(nn.Module):
 
 
 def build(args):
+    """
+    核心入口函数,在main.py中被调用
+    Returns:
+        model, CDNHOI类
+        criterion
+        postprocessors
+    """
     device = torch.device(args.device)
 
     backbone = build_backbone(args)
 
-    cdn = build_cdn(args)
+    cdn = build_cdn(args)#Transformer部分
 
     model = CDNHOI(
         backbone,

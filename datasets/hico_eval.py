@@ -8,7 +8,7 @@ class HICOEvaluator():
         self.overlap_iou = 0.5
         self.max_hois = 100
 
-        ########CDN NMS
+        ########CDN PNMS
         self.use_nms_filter = args.use_nms_filter
         self.thres_nms = args.thres_nms
         self.nms_alpha = args.nms_alpha

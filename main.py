@@ -77,7 +77,7 @@ def get_args_parser():
     parser.add_argument('--subject_category_id', default=0, type=int)
     parser.add_argument('--verb_loss_type', type=str, default='focal',
                         help='Loss type for the verb classification')
-    ##########added by CDN
+    ##########added by CDN, focal loss，超参alpha=0.5, same as QPIC(from CenterNet)
     parser.add_argument('--alpha', default=0.5, type=float, help='focal loss alpha')
     ###################
 
@@ -155,14 +155,14 @@ def get_args_parser():
     parser.add_argument('--p_verb', default=0.7, type=float,
                         help='Reweighting parameter for verb')
 
-    #CDN: hoi eval parameters
+    #CDN: Pairwise NMS(PNMS)
     parser.add_argument('--use_nms_filter', action='store_true', help='Use pair nms filter, default not use')
     parser.add_argument('--thres_nms', default=0.7, type=float)
     parser.add_argument('--nms_alpha', default=1.0, type=float)
     parser.add_argument('--nms_beta', default=0.5, type=float)
 
     ## CDN,保存文件，暂时不需要
-    parser.add_argument('--json_file', default='results.json', type=str)
+    #parser.add_argument('--json_file', default='results.json', type=str)
 
     return parser
 
@@ -297,7 +297,7 @@ def main(args):
         lr_scheduler.step()
 
         #CDN:保存最后一个epoch的checkpoint
-        if epoch == args.epochs - 1:
+        if args.output_dir and epoch == args.epochs - 1:
             checkpoint_path = os.path.join(output_dir, 'checkpoint_last.pth')
             utils.save_on_master({
                 'model': model_without_ddp.state_dict(),
