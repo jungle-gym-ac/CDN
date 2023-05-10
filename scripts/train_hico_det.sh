@@ -16,7 +16,7 @@ main.py \
         \
         --num_queries 64 \
         --lr_drop 60 \
-        --epochs 90 \
+        --epochs 1 \
         \
         --wandb\
         --backbone resnet50 \
