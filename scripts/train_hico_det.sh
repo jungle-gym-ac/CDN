@@ -14,13 +14,13 @@ main.py \
         --dec_layers_interaction 3 \
         \
         \
-        --num_queries 64 \
+        --num_queries 100 \
         --lr_drop 60 \
-        --epochs 1 \
+        --epochs 90 \
         \
         --wandb\
         --backbone resnet50 \
-        --pretrained params/detr-r50-pre-2stage-q64.pth \
+        --pretrained params/detr-r50-pre-2stage-q100.pth \
         #--use_nms_filter
 
 

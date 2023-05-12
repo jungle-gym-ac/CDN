@@ -131,7 +131,7 @@ def get_args_parser():
     parser.add_argument('--start_epoch', default=0, type=int, metavar='N',
                         help='start epoch')
     parser.add_argument('--eval', action='store_true')
-    parser.add_argument('--num_workers', default=2, type=int)
+    parser.add_argument('--num_workers', default=0, type=int)
 
     # distributed training parameters
     parser.add_argument('--world_size', default=1, type=int,
@@ -287,7 +287,7 @@ def main(args):
     start_time = time.time()
     '''
 
-    best_performance = 0
+    #best_performance = 0
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             sampler_train.set_epoch(epoch)
@@ -308,10 +308,10 @@ def main(args):
             }, checkpoint_path)
 
         ###########CDN
-        if args.freeze_mode == 0 and epoch < args.lr_drop and epoch % 5 != 0:  ## eval every 5 epoch before lr_drop
-            continue
-        elif args.freeze_mode == 0 and epoch >= args.lr_drop and epoch % 2 == 0:  ## eval every 2 epoch after lr_drop
-            continue
+        #if args.freeze_mode == 0 and epoch < args.lr_drop and epoch % 5 != 0:  ## eval every 5 epoch before lr_drop
+        #    continue
+        #elif args.freeze_mode == 0 and epoch >= args.lr_drop and epoch % 2 == 0:  ## eval every 2 epoch after lr_drop
+        #    continue
         ###################
 
         #CDN:保存
@@ -322,6 +322,7 @@ def main(args):
 
         ######保存checkpoint
         # CDN: 取performance最好的那个epoch进行保存！
+        '''
         if args.dataset_file == 'hico':
             performance = test_stats['mAP']
         elif args.dataset_file == 'vcoco':
@@ -338,7 +339,7 @@ def main(args):
             }, checkpoint_path)
 
             best_performance = performance
-
+        '''
 
         log_stats = {**{f'train_{k}': v for k, v in train_stats.items()},
                      **{f'test_{k}': v for k, v in test_stats.items()},

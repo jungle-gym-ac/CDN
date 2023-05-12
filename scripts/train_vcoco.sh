@@ -20,7 +20,7 @@ main.py \
         \
         --wandb\
         --backbone resnet50 \
-        --pretrained params/detr-r50-pre-2stage.pth
+        --pretrained params/detr-r50-pre-2stage-q100-vcoco.pth
         #--use_nms_filter
 
 

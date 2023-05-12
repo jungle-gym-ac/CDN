@@ -48,6 +48,7 @@ def main(args):
         print(k)
         if 'decoder' in k:
             ps['model'][k.replace('decoder', 'stage2_decoder')] = ps['model'][k].clone()
+    #second-stage decoder!
 
     ps['model']['sub_bbox_embed.layers.0.weight'] = ps['model']['bbox_embed.layers.0.weight'].clone()
     ps['model']['sub_bbox_embed.layers.0.bias'] = ps['model']['bbox_embed.layers.0.bias'].clone()
