@@ -1,10 +1,15 @@
+: '
 python -m torch.distributed.launch \
 --nproc_per_node=8 \
 --use_env \
+'
+
+torchrun --nproc_per_node=8 \
 main.py \
         --output_dir logs/hico \
         \
         \
+        --num_workers 0 \
         --dataset_file hico \
         --hoi_path data/hico_20160224_det \
         --num_obj_classes 80 \
@@ -14,13 +19,13 @@ main.py \
         --dec_layers_interaction 3 \
         \
         \
-        --num_queries 100 \
+        --num_queries 64 \
+        --pretrained params/detr-r50-pre-2stage-q64.pth \
         --lr_drop 60 \
         --epochs 90 \
         \
         --wandb\
-        --backbone resnet50 \
-        --pretrained params/detr-r50-pre-2stage-q100.pth \
+        --backbone resnet50
         #--use_nms_filter
 
 
