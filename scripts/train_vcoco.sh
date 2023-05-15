@@ -47,3 +47,14 @@ python -m torch.distributed.launch \
         --lr_backbone 1e-6 \
         --use_nms_filter
 '
+
+python generate_vcoco_official.py \
+        --param_path logs/v-coco/checkpoint_last.pth \
+        --save_path vcoco.pickle \
+        --hoi_path data/v-coco \
+        --dec_layers_hopd 3 \
+        --dec_layers_interaction 3
+       # --use_nms_filter
+
+cd data/v-coco
+python vsrl_eval.py vcoco.pickle
