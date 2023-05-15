@@ -9,7 +9,7 @@ from torch import nn, Tensor
 class CDN(nn.Module):
 
     def __init__(self, d_model=512, nhead=8, num_encoder_layers=6,
-                 num_dec_layers_hopd=3, num_dec_layers_interaction=3, 
+                 num_dec_layers_hopd=3, num_dec_layers_interaction=3,
                  dim_feedforward=2048, dropout=0.1,
                  activation="relu", normalize_before=False,
                  return_intermediate_dec=False):
@@ -20,6 +20,7 @@ class CDN(nn.Module):
         encoder_norm = nn.LayerNorm(d_model) if normalize_before else None
         self.encoder = TransformerEncoder(encoder_layer, num_encoder_layers, encoder_norm)
 
+        #hopd Decoder
         decoder_layer = TransformerDecoderLayer(d_model, nhead, dim_feedforward,
                                                 dropout, activation, normalize_before)
         decoder_norm = nn.LayerNorm(d_model)
@@ -27,6 +28,7 @@ class CDN(nn.Module):
                                           return_intermediate=return_intermediate_dec)
 
 
+        #interaction Decoder
         interaction_decoder_layer = TransformerDecoderLayer(d_model, nhead, dim_feedforward,
                                                 dropout, activation, normalize_before)
         interaction_decoder_norm = nn.LayerNorm(d_model)

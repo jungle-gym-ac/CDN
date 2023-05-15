@@ -23,7 +23,16 @@ main.py \
         --pretrained params/detr-r50-pre-2stage-q100-vcoco.pth
         #--use_nms_filter
 
+python generate_vcoco_official.py \
+        --param_path logs/v-coco/checkpoint_last.pth \
+        --save_path vcoco.pickle \
+        --hoi_path data/v-coco \
+        --dec_layers_hopd 3 \
+        --dec_layers_interaction 3
+       # --use_nms_filter
 
+cd data/v-coco
+python vsrl_eval.py vcoco.pickle
 #finetune
 : '
 python -m torch.distributed.launch \
@@ -48,13 +57,3 @@ python -m torch.distributed.launch \
         --use_nms_filter
 '
 
-python generate_vcoco_official.py \
-        --param_path logs/v-coco/checkpoint_last.pth \
-        --save_path vcoco.pickle \
-        --hoi_path data/v-coco \
-        --dec_layers_hopd 3 \
-        --dec_layers_interaction 3
-       # --use_nms_filter
-
-cd data/v-coco
-python vsrl_eval.py vcoco.pickle
