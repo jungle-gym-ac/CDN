@@ -49,12 +49,11 @@ python -m torch.distributed.launch \
 '
 
 python generate_vcoco_official.py \
-        --param_path logs/v-coco/checkpoint_last.pth \
-        --save_path vcoco.pickle \
+        --param_path logs/vcoco/checkpoint_last.pth \
+        --save_path logs/vcoco/vcoco.pickle \
         --hoi_path data/v-coco \
         --dec_layers_hopd 3 \
         --dec_layers_interaction 3
        # --use_nms_filter
 
-cd data/v-coco
-python vsrl_eval.py vcoco.pickle
+python data/v-coco/vsrl_eval.py logs/vcoco/vcoco.pickle
