@@ -68,7 +68,9 @@ def main(args):
     ps['model']['obj_class_embed.bias'] = ps['model']['class_embed.bias'].clone()[obj_ids]
 
     ps['model']['query_embed.weight'] = ps['model']['query_embed.weight'].clone()[:args.num_queries]
-
+    ############zhangjun
+    ps['model']['query_embed_interaction.weight'] = ps['model']['query_embed.weight'].clone()[:args.num_queries]
+    #################
     if args.dataset == 'vcoco':
         l = nn.Linear(ps['model']['obj_class_embed.weight'].shape[1], 1)
         l.to(ps['model']['obj_class_embed.weight'].device)

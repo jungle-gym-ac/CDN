@@ -45,8 +45,37 @@ class CDN(nn.Module):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
+
+    def forward(self, src, mask, query_embed, query_embed_interaction,  pos_embed):
+        bs, c, h, w = src.shape #batchsize,c,h,w
+        src = src.flatten(2).permute(2, 0, 1)
+        pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
+        query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
+        #####zhangjun
+        query_embed_interaction = query_embed_interaction.unsqueeze(1).repeat(1, bs, 1)
+        #############
+        mask = mask.flatten(1)
+
+        tgt = torch.zeros_like(query_embed)
+        memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
+        hopd_out = self.decoder(tgt, memory, memory_key_padding_mask=mask,
+                          pos=pos_embed, query_pos=query_embed)
+        hopd_out = hopd_out.transpose(1, 2)
+
+        #######zhangjun
+        interaction_query_embed = hopd_out[-1]+query_embed_interaction
+        #################
+        interaction_query_embed = interaction_query_embed.permute(1, 0, 2)
+        interaction_tgt = torch.zeros_like(interaction_query_embed)
+        interaction_decoder_out = self.interaction_decoder(interaction_tgt, memory, memory_key_padding_mask=mask,
+                                  pos=pos_embed, query_pos=interaction_query_embed)
+        interaction_decoder_out = interaction_decoder_out.transpose(1, 2)
+
+        return hopd_out, interaction_decoder_out, memory.permute(1, 2, 0).view(bs, c, h, w)
+
+    '''
     def forward(self, src, mask, query_embed, pos_embed):
-        bs, c, h, w = src.shape
+        bs, c, h, w = src.shape #batchsize,c,h,w
         src = src.flatten(2).permute(2, 0, 1)
         pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
         query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
@@ -68,7 +97,7 @@ class CDN(nn.Module):
         interaction_decoder_out = interaction_decoder_out.transpose(1, 2)
 
         return hopd_out, interaction_decoder_out, memory.permute(1, 2, 0).view(bs, c, h, w)
-
+    '''
 
 class TransformerEncoder(nn.Module):
 

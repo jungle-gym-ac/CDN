@@ -25,6 +25,9 @@ class CDNHOI(nn.Module):
         self.transformer = transformer
         hidden_dim = transformer.d_model
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
+        ########zhangjun
+        self.query_embed_interaction = nn.Embedding(num_queries,hidden_dim)
+        #############
         self.obj_class_embed = nn.Linear(hidden_dim, num_obj_classes + 1)
         self.verb_class_embed = nn.Linear(hidden_dim, num_verb_classes)
         self.sub_bbox_embed = MLP(hidden_dim, hidden_dim, 4, 3)
@@ -45,8 +48,11 @@ class CDNHOI(nn.Module):
 
         src, mask = features[-1].decompose()
         assert mask is not None
-        hopd_out, interaction_decoder_out = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[:2]
-
+        #hopd_out, interaction_decoder_out = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[:2]
+        ###########zhangjun
+        hopd_out, interaction_decoder_out = self.transformer(self.input_proj(src), mask, self.query_embed.weight,
+                                                             self.query_embed_interaction.weight, pos[-1])[:2]
+        ##################
         outputs_sub_coord = self.sub_bbox_embed(hopd_out).sigmoid()
         outputs_obj_coord = self.obj_bbox_embed(hopd_out).sigmoid()
         outputs_obj_class = self.obj_class_embed(hopd_out)
