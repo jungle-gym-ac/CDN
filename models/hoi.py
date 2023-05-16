@@ -487,11 +487,13 @@ def build(args):
         weight_dict['loss_matching'] = args.matching_loss_coef
 
     if args.aux_loss:
+        #CDN
         min_dec_layers_num = min(args.dec_layers_hopd, args.dec_layers_interaction)
         aux_weight_dict = {}
         for i in range(min_dec_layers_num - 1):
             aux_weight_dict.update({k + f'_{i}': v for k, v in weight_dict.items()})
         weight_dict.update(aux_weight_dict)
+        #CDN
 
     losses = ['obj_labels', 'verb_labels', 'sub_obj_boxes', 'obj_cardinality']
     if args.use_matching:
