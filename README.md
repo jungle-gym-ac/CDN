@@ -83,6 +83,12 @@ python convert_parameters.py \
         --save_path params/detr-r50-pre-2stage-q100-vcoco.pth \
         --dataset vcoco
 
+added_embed
+python convert_parameters.py \
+        --load_path params/detr-r50-e632da11.pth \
+        --save_path params/detr-r50-pre-2stage-q64-added.pth \
+        --num_queries 64
+
 ## Training
 After the preparation, you can start training with the following commands. The whole training is split into two steps: CDN base model training and dynamic re-weighting training. The trainings of CDN-S for HICO-DET and V-COCO are shown as follows.
 

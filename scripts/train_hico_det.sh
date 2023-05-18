@@ -19,7 +19,7 @@ main.py \
         \
         \
         --num_queries 64 \
-        --pretrained params/detr-r50-pre-2stage-q64.pth \
+        --pretrained params/detr-r50-pre-2stage-q64-added.pth \
         --lr_drop 60 \
         --epochs 90 \
         \
