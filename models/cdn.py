@@ -46,13 +46,13 @@ class CDN(nn.Module):
                 nn.init.xavier_uniform_(p)
 
 
-    def forward(self, src, mask, query_embed, query_embed_interaction,  pos_embed):
+    def forward(self, src, mask, query_embed, query_embed_interaction, query_projection, pos_embed):
         bs, c, h, w = src.shape #batchsize,c,h,w
         src = src.flatten(2).permute(2, 0, 1)
         pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
         query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
         #####zhangjun
-        query_embed_interaction = query_embed_interaction.unsqueeze(1).repeat(1, bs, 1)
+        query_embed_interaction = query_embed_interaction.unsqueeze(1).repeat(1, bs, 1) #num_queries,d_model ->num_queries,1,d_model -> num_queries,batchsize,d_model
         #############
         mask = mask.flatten(1)
 
@@ -63,7 +63,8 @@ class CDN(nn.Module):
         hopd_out = hopd_out.transpose(1, 2)
 
         #######zhangjun
-        interaction_query_embed = hopd_out[-1].permute(1, 0, 2)+query_embed_interaction
+        concat_queries = torch.cat((hopd_out[-1].permute(1, 0, 2),query_embed_interaction),dim=-1)
+        interaction_query_embed = query_projection(concat_queries)
         #################
 
         interaction_tgt = torch.zeros_like(interaction_query_embed)

@@ -26,7 +26,9 @@ class CDNHOI(nn.Module):
         hidden_dim = transformer.d_model
         self.query_embed = nn.Embedding(num_queries, hidden_dim)
         ########zhangjun
-        self.query_embed_interaction = nn.Embedding(num_queries,hidden_dim)
+        self.hidden_dim=hidden_dim
+        self.query_embed_interaction = nn.Embedding(num_queries, hidden_dim)
+        self.query_projection = nn.Linear(2 * hidden_dim, hidden_dim)
         #############
         self.obj_class_embed = nn.Linear(hidden_dim, num_obj_classes + 1)
         self.verb_class_embed = nn.Linear(hidden_dim, num_verb_classes)
@@ -40,6 +42,15 @@ class CDNHOI(nn.Module):
         self.dec_layers_interaction = args.dec_layers_interaction
         if self.use_matching:
             self.matching_embed = nn.Linear(hidden_dim, 2)
+    #########zhangjun
+        self._reset_parameters()
+    def _reset_parameters(self):
+        nn.init.eye_(self.query_projection.weight.data[:,:self.hidden_dim])
+        nn.init.eye_(self.query_projection.weight.data[:,self.hidden_dim:])
+        print(self.query_projection.weight.data[:10, :10])
+        print(self.query_projection.weight.data[-10:, -10:])
+
+    ##########
 
     def forward(self, samples: NestedTensor):
         if not isinstance(samples, NestedTensor):
@@ -51,7 +62,7 @@ class CDNHOI(nn.Module):
         #hopd_out, interaction_decoder_out = self.transformer(self.input_proj(src), mask, self.query_embed.weight, pos[-1])[:2]
         ###########zhangjun
         hopd_out, interaction_decoder_out = self.transformer(self.input_proj(src), mask, self.query_embed.weight,
-                                                             self.query_embed_interaction.weight, pos[-1])[:2]
+                                                             self.query_embed_interaction.weight,self.query_projection, pos[-1])[:2]
         ##################
         outputs_sub_coord = self.sub_bbox_embed(hopd_out).sigmoid()
         outputs_obj_coord = self.obj_bbox_embed(hopd_out).sigmoid()
@@ -74,7 +85,6 @@ class CDNHOI(nn.Module):
             else:
                 out['aux_outputs'] = self._set_aux_loss(outputs_obj_class, outputs_verb_class,
                                                         outputs_sub_coord, outputs_obj_coord)
-
         return out
 
     @torch.jit.unused
